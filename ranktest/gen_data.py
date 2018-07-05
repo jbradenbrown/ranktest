@@ -10,7 +10,7 @@ def get_dists(num):
 
 	return [dist_vars() for i in range(num)]
 
-def gen_data(dists, size, pred_num, chance_pred, chg_pred):
+def gen_data(dists, size, pred_num, chance_pred, pred_scale, score_noise_scale):
 
 	if (pred_num > len(dists)):
 		print("Predictive data items must be less than number of distributions")
@@ -18,7 +18,8 @@ def gen_data(dists, size, pred_num, chance_pred, chg_pred):
 
 	data_nonpred = np.array([norm(stats.norm.rvs(*dist, size)) for dist in dists[:-pred_num]])
 	scores = stats.norm.rvs(0,1,size)
-	data_pred = np.array([norm(stats.norm.rvs(*dist, size) + ((dist[1] * scores * chg_pred) if random.random() < chance_pred else 0)) for dist in dists[-pred_num:]])
+	is_pred = lambda: np.random.choice([0,1], size=size, p=[1-chance_pred, chance_pred])
+	data_pred = np.array([norm(stats.norm.rvs(*dist, size) + ((dist[1] * (scores*stats.norm.rvs(1,score_noise_scale)) * pred_scale) * is_pred())) for dist in dists[-pred_num:]])
 	data = np.append(data_nonpred, data_pred, axis=0).T
 
 	return (data, norm(scores))
